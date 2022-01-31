@@ -42,7 +42,8 @@ run_scenario <-
     # set up transmission
     
     # start of simulation
-    R0_t0 <- as.Date(x = "2/1/2020", format = "%m/%d/%Y")
+    #R0_t0 <- as.Date(x = "2/1/2020", format = "%m/%d/%Y") [JT changed to below for excess fits]
+    R0_t0 <- as.Date(x = Rt_overtime$date[1], format = "%m/%d/%Y") #take first date of excess fits 2019-12-14
     
     # three pulses to time waves correctly 
     R0_t1 <- as.Date(x = "3/1/2020", format = "%m/%d/%Y")
@@ -60,17 +61,37 @@ run_scenario <-
     # get index for 1 Jan 2022, as don't want to vaccinate any children <10y before this time
     t_10y_start <- as.integer(difftime(as.Date("01/01/2022", format = "%m/%d/%Y"), R0_t0-1))
  
+    # read in saved R profile [JT- replaced with below]
+    # R_profile <- readRDS("data/R_profile_india.RDS")
+    # R_profile$date <- as.Date(R_profile$date, format = "%d/%m/%Y")
+    # add_R_profile <- data.frame(date=c(as.Date(x = vfr_time1, format = "%m/%d/%Y"), as.Date(x = vfr_time2, format = "%m/%d/%Y")), 
+    #                             Rt=c(max_Rt,max_Rt_omicron))
+    # R_profile <- rbind(R_profile,add_R_profile)
+    # 
+    # dates <- R_profile$date
+    # rt <- R_profile$Rt
+    # 
+    # rt_out <- safir::interpolate_rt(dates = dates, rt = rt, max_date = tmax_date) 
+    
+    ####### use R profile from excess fits
     # read in saved R profile
-    R_profile <- readRDS("data/R_profile_india.RDS")
-    R_profile$date <- as.Date(R_profile$date, format = "%d/%m/%Y")
-    add_R_profile <- data.frame(date=c(as.Date(x = vfr_time1, format = "%m/%d/%Y"), as.Date(x = vfr_time2, format = "%m/%d/%Y")), 
-                                Rt=c(max_Rt,max_Rt_omicron))
+    R_profile <- Rt_overtime
+    R_profile$date <- as.Date(Rt_overtime$date, format = "%d/%m/%Y")
+    missing_dates <- seq(as.Date(vfr_time1, format = "%m/%d/%Y"),as.Date(vfr_time2, format = "%m/%d/%Y"),by="days")
+    missing_dates <- missing_dates[2:(length(missing_dates)-1)]
+    missing_rt <- rep(NA, length(missing_dates))
+    add_R_profile <- data.frame(date=c(as.Date(x = vfr_time1, format = "%m/%d/%Y"), missing_dates, as.Date(x = vfr_time2, format = "%m/%d/%Y"),
+                                       as.Date(x = vfr_time2, format = "%m/%d/%Y")+1), 
+                                Rt=c(max_Rt,missing_rt, max_Rt_omicron, max_Rt_omicron))
+    
     R_profile <- rbind(R_profile,add_R_profile)
     
     dates <- R_profile$date
     rt <- R_profile$Rt
+    rt <- na.approx(R_profile$Rt) #linear interpolation to fill in NAs
     
-    rt_out <- safir::interpolate_rt(dates = dates, rt = rt, max_date = tmax_date)
+    rt_out<- list("Rt" = rt, "Rt_tt" = 1:length(rt))
+    ###########################
     
     # daily per-capita prob of external infection
     lambda_external <- rep(0.0000001, time_period)
@@ -413,6 +434,11 @@ run_scenario <-
     saf_reps_summarise <- left_join(saf_reps_summarise, prop_R, by = "scenario")
     
     # Save output
-    output_address <- paste0("raw_outputs/output_", name, "/scenario_", scenario, ".rds")
-    saveRDS(saf_reps_summarise, output_address)
+    # to create folder:
+    output_address <- dir.create(paste0("raw_outputs/output_", name), recursive = TRUE)
+    saveRDS(saf_reps_summarise, paste0(paste0("raw_outputs/output_", name, "/scenario_", scenario),".rds"))
+    
+    #if folder present:
+    #output_address <- paste0("raw_outputs/output_", name, "/scenario_", scenario, ".rds")
+    #saveRDS(saf_reps_summarise, output_address)
   }

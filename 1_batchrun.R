@@ -18,9 +18,36 @@ fit <- "imp_v2_20211219_AZPD2=FALSE_SB=TRUE_NewDecay=TRUE_SD1"
 ## through to the end time of the simulation
 ###############################################################################################################
 
-R_profile <- read_csv("data/category_2_Rt.csv") 
-saveRDS(R_profile,"data/R_profile_india.rds")
+# replaced this R_profile with below
+#R_profile <- read_csv("data/category_2_Rt.csv") 
+#saveRDS(R_profile,"data/R_profile_india.rds") # 01/02/2020 - 01/11/21 (monthly data)
 
+############ use excess mortality fits
+iso3c<- "IND" #select country
+
+##### link to folder with excess fits (or skip this chunk of code and load up saved draws) ############
+file_path <- "C:/Users/jt513/OneDrive - Imperial College London/nimue_model_fits/excess/"
+
+Rds_path <- file.path(file_path,iso3c)
+Rds_path <- file.path(Rds_path, "Rds", fsep=".")
+model_out <- readRDS(Rds_path)
+
+# run draws for each country once
+draws <- 2 #has to be >1, 25 used previously
+model_out <- squire.page::generate_draws(model_out, pars.list = NULL, draws = draws)
+saveRDS(model_out, paste0(iso3c,".rds"))
+#############################################################################################################
+
+#read in countries draws
+model_out <- readRDS(paste0(iso3c,".rds"))
+
+#get Rt profile for 1 replicate (or all Rt values for each replicate)
+beta <- squire.page::get_Rt(model_out)%>% #values at date_0
+  dplyr::group_by(rep)
+beta <- beta %>% filter(rep==2) #rep = 1-draws
+Rt_overtime <- data.frame(beta$date,beta$Rt) # 2019-12-14 - 2021-11-28 (daily data)
+names(Rt_overtime)[1] <- "date"
+names(Rt_overtime)[2] <- "Rt"
 
 #### Get vaccine parameters  #############################################################
 #### note: will need to change the booster dose as using AZ not PF #######################
@@ -37,7 +64,7 @@ vacc_params <- readRDS(paste0("data/param_list_",fit1,".rds")) %>%
   select(-c(vacc))
 
 #define these for use when testing code run function
-test <- 0
+test <- TRUE  # or 0 if not testing
 if(test){
   source("R/utils.R")
   source("R/vaccine_strategy.R")
@@ -60,17 +87,18 @@ if(test){
 
 target_pop <- 5e5
 dt <- 0.25
-repetition <- 1:5
+#repetition <- 1:5
+repetition <- 1 #JT 1 to test
 seeding_cases <- 10
 ab_model_infection <- TRUE
-max_Rt <- 4
+max_Rt <- Rt_overtime$Rt[dim(Rt_overtime)[1]] # was 4, taken max Rt value as last Rt value in profile
 mu_ab_infection <- 1.7
 hs_constraints <- "Present"
 
 #### Omicron specific parameters ###############################################
 
-max_Rt_omicron <- 4.25 #c(4.25,4.5,4.75)
-vfr_time1 <- "11/27/2021"
+max_Rt_omicron <- max_Rt + 0.5 #JT was 4.25 #c(4.25,4.5,4.75)
+vfr_time1 <- Rt_overtime$date[dim(Rt_overtime)[1]]+1 # was "11/27/2021", now last date from fits+1
 vfr_time2 <- "12/31/2021"
 vfr <- 3.9 #unique(vacc_params$vfr)
 central_vfr <- vfr[1]
