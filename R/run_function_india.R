@@ -132,8 +132,8 @@ run_scenario <-
     # BASE PARAMETERS
     
     # Population and mixing
-    rep_country <- "India"
-    iso3c <- countrycode(rep_country, origin = "country.name", destination = "iso3c")
+    rep_country <- iso3c 
+    rep_country <- countrycode(rep_country, origin = "iso3c", destination = "country.name")
     pop <- squire::get_population(country = rep_country)
     pop_standardise <- target_pop / sum(pop$n)
     pop$n <- as.integer(pop$n * pop_standardise)

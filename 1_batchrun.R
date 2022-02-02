@@ -91,13 +91,13 @@ dt <- 0.25
 repetition <- 1 #JT 1 to test
 seeding_cases <- 10
 ab_model_infection <- TRUE
-max_Rt <- Rt_overtime$Rt[dim(Rt_overtime)[1]] # was 4, taken max Rt value as last Rt value in profile
+max_Rt <- max(Rt_overtime$Rt) # was 4, now using the max Rt value. OR to use last Rt value in profile Rt_overtime$Rt[dim(Rt_overtime)[1]]
 mu_ab_infection <- 1.7
 hs_constraints <- "Present"
 
 #### Omicron specific parameters ###############################################
 
-max_Rt_omicron <- max_Rt + 0.5 #JT was 4.25 #c(4.25,4.5,4.75)
+max_Rt_omicron <- max(Rt_overtime$Rt) + 0.5 #JT was 4.25, now taking max_Rt+0.5 #c(4.25,4.5,4.75)
 vfr_time1 <- Rt_overtime$date[dim(Rt_overtime)[1]]+1 # was "11/27/2021", now last date from fits+1
 vfr_time2 <- "12/31/2021"
 vfr <- 3.9 #unique(vacc_params$vfr)
