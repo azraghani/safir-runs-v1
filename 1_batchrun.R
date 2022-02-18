@@ -25,12 +25,11 @@ fit <- "imp_v2_20211219_AZPD2=FALSE_SB=TRUE_NewDecay=TRUE_SD1"
 ############ use excess mortality fits
 iso3c<- "IND" #select country
 
-##### link to folder with excess fits (or skip this chunk of code and load up saved draws) ############
-file_path <- "C:/Users/jt513/OneDrive - Imperial College London/nimue_model_fits/excess/"
-
+##### link to github for excess fits (or skip this chunk of code and load up saved draws) ############
+file_path <-"https://github.com/mrc-ide/nimue_global_fits/raw/main/excess/"
 Rds_path <- file.path(file_path,iso3c)
 Rds_path <- file.path(Rds_path, "Rds", fsep=".")
-model_out <- readRDS(Rds_path)
+model_out <- readRDS(url(Rds_path)) #remove url here if using local file_path
 
 # run draws for each country once
 draws <- 2 #has to be >1, 25 used previously
